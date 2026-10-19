@@ -170,8 +170,7 @@
 
     /* حالة الضغط */
     .talk.active .flag {
-        transform: scale(0.92);
-        box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--c);
+        transform: scale(0.94);
     }
     .talk.active .hint { visibility: hidden; }
     .talk.active .wave { display: flex; }
@@ -251,7 +250,7 @@
         <div class="block">
             <div class="label" id="main-label"></div>
             <div class="text" id="main-text">
-                <span class="placeholder">اضغط مطولاً على العلم وتكلم، ثم ارفع إصبعك</span>
+                <span class="placeholder">اضغط على العلم وتكلم، ثم اضغط مرة أخرى عند الانتهاء</span>
             </div>
         </div>
 
@@ -277,19 +276,19 @@
     <footer class="dock">
 
         <!-- الصيني -->
-        <div class="talk cn" id="btn-zh" role="button" aria-label="中文 按住说话">
+        <div class="talk cn" id="btn-zh" role="button" aria-label="中文 点击说话">
             <div class="flag"><img src="https://flagcdn.com/w640/cn.png" alt="علم الصين"></div>
             <div class="under">
-                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>按住说话</div>
+                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>点击说话</div>
                 <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
             </div>
         </div>
 
         <!-- العربي -->
-        <div class="talk ar" id="btn-ar" role="button" aria-label="العربية اضغط مطولاً للتحدث">
+        <div class="talk ar" id="btn-ar" role="button" aria-label="العربية اضغط للتحدث">
             <div class="flag"><img src="https://flagcdn.com/w640/mr.png" alt="علم موريتانيا"></div>
             <div class="under">
-                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>اضغط مطولاً</div>
+                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>اضغط للتحدث</div>
                 <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
             </div>
         </div>
@@ -511,7 +510,7 @@
         showOriginal('', langKey, false);
         showTranslation('', OTHER[langKey]);
         els.btn[langKey].classList.add('active');
-        setStatus(langKey === 'ar' ? 'أستمع إليك… ارفع إصبعك عند الانتهاء' : '正在听… 说完请松手', 'rec');
+        setStatus(langKey === 'ar' ? 'أستمع إليك… اضغط مرة أخرى عند الانتهاء' : '正在听… 说完请再点一下', 'rec');
 
         beginSegment(langKey, mySession);
     }
@@ -675,18 +674,11 @@
     /* ---------- الضغط المطوّل ---------- */
     function bind(langKey) {
         const el = els.btn[langKey];
-        let pressed = false;
-        el.addEventListener('pointerdown', e => {
+        el.addEventListener('click', e => {
             e.preventDefault();
-            if (pressed) return;
-            pressed = true;
-            try { el.setPointerCapture(e.pointerId); } catch (_) {}
-            startListening(langKey);
+            if (activeLang === langKey && holding) { stopListening(); return; }   // نقرة ثانية: إيقاف
+            if (!activeLang && !busy) startListening(langKey);                    // نقرة أولى: بدء
         });
-        const release = () => { if (!pressed) return; pressed = false; stopListening(); };
-        el.addEventListener('pointerup', release);
-        el.addEventListener('pointercancel', release);
-        el.addEventListener('lostpointercapture', release);
         el.addEventListener('contextmenu', e => e.preventDefault());
     }
     bind('zh'); bind('ar');
