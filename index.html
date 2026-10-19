@@ -242,6 +242,15 @@
         .flag { width: 210px; }
         .text { font-size: clamp(48px, 6vw, 96px); }
     }
+
+    /* اسم اللغة تحت العلم */
+    .lname {
+        font-size: 20px; font-size: clamp(17px, 4.8vw, 24px);
+        font-weight: 900; color: var(--ink); line-height: 1;
+        margin-top: -2px;
+    }
+    .talk { gap: 8px; }
+    @media (max-height: 520px) { .lname { font-size: 15px; } .talk { gap: 4px; } }
 </style>
 </head>
 <body>
@@ -253,21 +262,6 @@
                 <span class="placeholder">اضغط على العلم وتكلم، ثم اضغط مرة أخرى عند الانتهاء</span>
             </div>
         </div>
-
-        <div class="actions" id="actions" hidden>
-            <button class="act" id="act-copy" type="button">
-                <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
-                <span>نسخ · 复制</span>
-            </button>
-            <button class="act" id="act-replay" type="button">
-                <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
-                <span>استماع · 重听</span>
-            </button>
-            <button class="act" id="act-download" type="button">
-                <svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
-                <span>تحميل · 下载</span>
-            </button>
-        </div>
     </div>
 
     <div class="status" id="status"></div>
@@ -276,10 +270,11 @@
     <footer class="dock">
 
         <!-- الصيني -->
-        <div class="talk cn" id="btn-zh" role="button" aria-label="中文 点击说话">
+        <div class="talk cn" id="btn-zh" role="button" aria-label="الصينية اضغط للتحدث">
             <div class="flag"><img src="https://flagcdn.com/w640/cn.png" alt="علم الصين"></div>
+            <div class="lname">الصينية</div>
             <div class="under">
-                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>点击说话</div>
+                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>اضغط للتحدث</div>
                 <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
             </div>
         </div>
@@ -287,6 +282,7 @@
         <!-- العربي -->
         <div class="talk ar" id="btn-ar" role="button" aria-label="العربية اضغط للتحدث">
             <div class="flag"><img src="https://flagcdn.com/w640/mr.png" alt="علم موريتانيا"></div>
+            <div class="lname">الموريتانية</div>
             <div class="under">
                 <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>اضغط للتحدث</div>
                 <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -326,7 +322,6 @@
     const els = {
         status: $('status'),
         mainText: $('main-text'), mainLabel: $('main-label'),
-        actions: $('actions'),
         btn: { zh: $('btn-zh'), ar: $('btn-ar') }
     };
 
@@ -340,7 +335,6 @@
     /* أثناء الكلام: يظهر ما يقوله المتحدث بلغته */
     function showOriginal(text, lang, interim) {
         lastResult = null;
-        els.actions.hidden = true;
         els.mainText.textContent = text;
         els.mainText.dir = LANGS[lang].dir;
         els.mainText.className = 'text' + (interim ? ' interim' : '');
@@ -355,7 +349,6 @@
         els.mainText.scrollTop = 0;
         els.mainLabel.textContent = text ? LANGS[lang].name : '';
         lastResult = text ? { text, lang } : null;
-        els.actions.hidden = !text;
     }
     function setDisabled(on) { Object.values(els.btn).forEach(b => b.classList.toggle('disabled', on)); }
 
@@ -580,7 +573,6 @@
         holding = false;
         els.btn[langKey].classList.remove('active');
         if (rec) {
-            setStatus('…', 'work');
             try { rec.stop(); } catch (_) {}
         } else {
             finishSession(langKey, session);   // الإصبع رُفع بين مقطعين
@@ -598,13 +590,11 @@
 
         busy = true; setDisabled(true);
         const target = OTHER[langKey];
-        setStatus(langKey === 'ar' ? 'جارٍ الترجمة…' : '翻译中…', 'work');
 
         try {
             const out = await translate(text, langKey, target);
             if (mySession !== session) return;
             showTranslation(out, target);
-            setStatus(target === 'ar' ? 'جارٍ النطق بالعربية…' : '正在朗读…', 'work');
             await speak(out, target);
             setStatus('');
         } catch (e) {
@@ -613,63 +603,6 @@
             busy = false; setDisabled(false);
         }
     }
-
-    /* ---------- أزرار النسخ / الاستماع / التحميل ---------- */
-    function flash(id, msg) {
-        const span = $(id).querySelector('span');
-        const old = span.textContent;
-        span.textContent = msg;
-        setTimeout(() => { span.textContent = old; }, 1500);
-    }
-
-    $('act-copy').addEventListener('click', async () => {
-        if (!lastResult) return;
-        const text = lastResult.text;
-        try {
-            await navigator.clipboard.writeText(text);
-        } catch (_) {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.cssText = 'position:fixed;opacity:0;user-select:text;-webkit-user-select:text';
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand('copy'); } catch (__) {}
-            ta.remove();
-        }
-        flash('act-copy', 'تم النسخ ✓ · 已复制');
-    });
-
-    $('act-replay').addEventListener('click', async () => {
-        if (!lastResult || busy) return;
-        const { text, lang } = lastResult;
-        busy = true; setDisabled(true);
-        try {
-            try { player.pause(); } catch (_) {}
-            'speechSynthesis' in window && speechSynthesis.cancel();
-            await speak(text, lang);
-        } finally {
-            busy = false; setDisabled(false);
-        }
-    });
-
-    $('act-download').addEventListener('click', async () => {
-        if (!lastResult) return;
-        const { text, lang } = lastResult;
-        try {
-            const blob = await fetchNeural(text, lang);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'translation-' + lang + '-' + Date.now() + '.mp3';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 5000);
-            flash('act-download', 'تم التحميل ✓ · 已下载');
-        } catch (_) {
-            flash('act-download', 'غير متاح ✕ · 不可用');
-        }
-    });
 
     /* ---------- الضغط المطوّل ---------- */
     function bind(langKey) {
