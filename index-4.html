@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ترجمة فورية · عربي ⇄ 中文</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@700;900&family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+    * {
+        box-sizing: border-box; margin: 0; padding: 0;
+        user-select: none; -webkit-user-select: none;
+        -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+        --ink: #14213d;
+        --ink-soft: #5b6478;
+        --paper: #fbfbfb;
+        --cn: #de2910;
+        --cn-gold: #ffd23f;
+        --mr: #0a7a4b;
+        --mr-gold: #f5b700;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--paper);
+        background-image:
+            linear-gradient(rgba(0,0,0,.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,.04) 1px, transparent 1px);
+        background-size: 25px 25px;
+        background-position: center;
+        overflow: hidden;
+        font-family: "Tajawal", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", Tahoma, sans-serif;
+        color: var(--ink);
+        padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    /* ================= المساحة العلوية ================= */
+    .main-content {
+        flex: 1; min-height: 0;
+        display: flex; flex-direction: column;
+        padding: 18px 24px 4px;
+        gap: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .block { display: flex; flex-direction: column; min-height: 0; }
+    .block.original { flex: 0 0 auto; max-height: 32%; }
+    .block.translation { flex: 1 1 auto; }
+
+    .label {
+        font-size: 15px; font-weight: 800; color: var(--ink-soft);
+        margin-bottom: 4px; min-height: 20px;
+    }
+
+    .text {
+        font-weight: 900; line-height: 1.35;
+        overflow-y: auto; overflow-wrap: anywhere; scrollbar-width: none;
+    }
+    .text::-webkit-scrollbar { display: none; }
+
+    .original .text { font-size: clamp(24px, 6vw, 40px); color: var(--ink-soft); }
+    .translation .text { font-size: clamp(36px, 9.5vw, 76px); color: var(--ink); }
+    .text.interim { opacity: .6; }
+
+    .placeholder {
+        font-size: clamp(22px, 5vw, 30px); font-weight: 700; color: #9aa1b2;
+    }
+
+    /* تدوير النص للشخص المقابل */
+    .main-content.flipped .translation { transform: rotate(180deg); }
+    .flip-btn {
+        position: absolute; top: 12px; left: 16px;
+        width: 40px; height: 40px; border-radius: 12px;
+        background: #fff; border: 2px solid var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        display: grid; place-items: center; cursor: pointer; z-index: 2;
+        transition: transform .12s, box-shadow .12s;
+    }
+    .flip-btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--ink); }
+    .flip-btn svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .main-content.flipped .flip-btn { background: var(--ink); }
+    .main-content.flipped .flip-btn svg { stroke: #fff; }
+
+    .status {
+        text-align: center; font-size: 16px; font-weight: 800;
+        min-height: 28px; color: var(--ink-soft); padding: 4px 12px;
+    }
+    .status.rec { color: var(--cn); }
+    .status.work { color: #1b6ef3; }
+    .status.err { color: var(--cn); }
+
+    /* ================= اللوحة السفلية الاحترافية ================= */
+    .dock {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        padding: 10px 16px;
+        padding-bottom: max(18px, env(safe-area-inset-bottom));
+        direction: rtl;
+    }
+
+    .talk {
+        --c: var(--mr);
+        --g: var(--mr-gold);
+        position: relative;
+        height: clamp(150px, 24dvh, 210px);
+        border-radius: 30px;
+        background: #fff;
+        border: 2.5px solid var(--ink);
+        box-shadow: 0 6px 0 var(--ink);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 6px;
+        cursor: pointer; touch-action: none; overflow: hidden;
+        transition: transform .12s cubic-bezier(.3,.7,.4,1), box-shadow .12s, background .18s, color .18s;
+    }
+    .talk.cn { --c: var(--cn); --g: var(--cn-gold); }
+
+    /* شريط لوني علوي بلون العلم */
+    .talk::before {
+        content: ""; position: absolute; inset: 0 0 auto 0; height: 8px;
+        background: linear-gradient(90deg, var(--c) 0 70%, var(--g) 70% 100%);
+        transition: opacity .18s;
+    }
+
+    .flag {
+        width: 62px; height: 62px; border-radius: 50%;
+        border: 2.5px solid var(--ink);
+        overflow: hidden; background: #eee; flex: none;
+    }
+    .flag img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+
+    .lang-name { font-size: 28px; font-weight: 900; line-height: 1; color: var(--ink); transition: color .18s; }
+    .hint { font-size: 14px; font-weight: 700; color: var(--ink-soft); transition: color .18s; display: flex; align-items: center; gap: 6px; }
+    .hint svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* موجات الصوت */
+    .wave {
+        position: absolute; bottom: 12px; display: none;
+        align-items: flex-end; gap: 5px; height: 22px;
+    }
+    .wave i {
+        width: 5px; border-radius: 3px; background: #fff; height: 6px;
+        animation: bar .9s ease-in-out infinite;
+    }
+    .wave i:nth-child(2) { animation-delay: .12s; }
+    .wave i:nth-child(3) { animation-delay: .24s; }
+    .wave i:nth-child(4) { animation-delay: .36s; }
+    .wave i:nth-child(5) { animation-delay: .48s; }
+    @keyframes bar { 0%,100% { height: 5px; } 50% { height: 22px; } }
+
+    .talk.active {
+        background: var(--c);
+        transform: translateY(6px);
+        box-shadow: 0 0 0 var(--ink);
+    }
+    .talk.active::before { opacity: 0; }
+    .talk.active .lang-name, .talk.active .hint { color: #fff; }
+    .talk.active .hint { display: none; }
+    .talk.active .wave { display: flex; }
+    .talk.active .flag { border-color: #fff; }
+
+    .talk.disabled { opacity: .5; pointer-events: none; }
+
+    @media (prefers-reduced-motion: reduce) { .wave i { animation: none; height: 14px; } }
+    @media (max-width: 380px) { .lang-name { font-size: 24px; } .flag { width: 52px; height: 52px; } }
+</style>
+</head>
+<body>
+
+    <div class="main-content" id="main">
+        <div class="flip-btn" id="flip" role="button" aria-label="قلب النص للشخص المقابل">
+            <svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+        </div>
+
+        <div class="block original">
+            <div class="label" id="original-label"></div>
+            <div class="text" id="original-text"></div>
+        </div>
+        <div class="block translation">
+            <div class="label" id="translation-label"></div>
+            <div class="text" id="translation-text">
+                <span class="placeholder">اضغط مطولاً على الميكروفون وتكلم، ثم ارفع إصبعك</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <!-- اللوحة السفلية -->
+    <footer class="dock">
+
+        <!-- الصيني -->
+        <div class="talk cn" id="btn-zh" role="button" aria-label="中文 按住说话">
+            <div class="flag"><img src="https://flagcdn.com/w320/cn.png" alt="علم الصين"></div>
+            <div class="lang-name">中文</div>
+            <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>按住说话</div>
+            <div class="wave"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+
+        <!-- العربي -->
+        <div class="talk ar" id="btn-ar" role="button" aria-label="العربية اضغط مطولاً للتحدث">
+            <div class="flag"><img src="https://flagcdn.com/w320/mr.png" alt="علم موريتانيا"></div>
+            <div class="lang-name">العربية</div>
+            <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>اضغط مطولاً</div>
+            <div class="wave"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+
+    </footer>
+
+<script>
+(() => {
+    'use strict';
+
+    /* ✏️ إن شغّلت الخادم في مكان آخر ضع عنوانه هنا، مثال: 'https://my-app.onrender.com' */
+    const TTS_BASE = '';
+
+    const LANGS = {
+        ar: { stt: 'ar-SA', tts: 'ar-SA', api: 'ar',    name: 'العربية', dir: 'rtl' },
+        zh: { stt: 'zh-CN', tts: 'zh-CN', api: 'zh-CN', name: '中文',    dir: 'ltr' }
+    };
+    const OTHER = { ar: 'zh', zh: 'ar' };
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const $ = id => document.getElementById(id);
+    const els = {
+        main: $('main'), status: $('status'),
+        origText: $('original-text'), origLabel: $('original-label'),
+        transText: $('translation-text'), transLabel: $('translation-label'),
+        btn: { zh: $('btn-zh'), ar: $('btn-ar') }
+    };
+
+    let rec = null, session = 0, finalText = '', interimText = '', activeLang = null, busy = false;
+
+    /* ---------- عرض ---------- */
+    function setStatus(msg, cls = '') { els.status.textContent = msg; els.status.className = 'status ' + cls; }
+
+    function showOriginal(text, lang, interim) {
+        els.origText.textContent = text;
+        els.origText.dir = LANGS[lang].dir;
+        els.origText.className = 'text' + (interim ? ' interim' : '');
+        els.origLabel.textContent = text ? LANGS[lang].name : '';
+        els.origText.scrollTop = els.origText.scrollHeight;
+    }
+    function showTranslation(text, lang) {
+        els.transText.textContent = text;
+        els.transText.dir = LANGS[lang].dir;
+        els.transLabel.textContent = text ? LANGS[lang].name : '';
+    }
+    function setDisabled(on) { Object.values(els.btn).forEach(b => b.classList.toggle('disabled', on)); }
+
+    $('flip').addEventListener('click', () => els.main.classList.toggle('flipped'));
+
+    /* ---------- الترجمة ---------- */
+    async function translateGoogle(text, from, to) {
+        const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl='
+            + encodeURIComponent(from) + '&tl=' + encodeURIComponent(to) + '&q=' + encodeURIComponent(text);
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('google ' + r.status);
+        const d = await r.json();
+        return d[0].map(p => p[0]).join('');
+    }
+    async function translateMyMemory(text, from, to) {
+        const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text)
+            + '&langpair=' + encodeURIComponent(from + '|' + to);
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('mymemory ' + r.status);
+        const d = await r.json();
+        const out = d && d.responseData && d.responseData.translatedText;
+        if (!out) throw new Error('empty');
+        return out;
+    }
+    async function translate(text, fromKey, toKey) {
+        const from = LANGS[fromKey].api, to = LANGS[toKey].api;
+        try { return await translateGoogle(text, from, to); }
+        catch (_) { return await translateMyMemory(text, from, to); }
+    }
+
+    /* ---------- الصوت: عصبي (خادمك) ← Google ← صوت الجهاز ---------- */
+    const player = new Audio();
+    player.preload = 'auto';
+    const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+
+    function unlockAudio() {           // ضروري لـ iOS وSafari: داخل لمسة المستخدم
+        try { player.src = SILENT; const p = player.play(); p && p.catch(() => {}); } catch (_) {}
+        if ('speechSynthesis' in window) {
+            try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (_) {}
+        }
+    }
+
+    function playSrc(src) {
+        return new Promise((resolve, reject) => {
+            player.onended = () => resolve();
+            player.onerror = () => reject(new Error('audio error'));
+            player.src = src;
+            const p = player.play();
+            if (p && p.catch) p.catch(reject);
+        });
+    }
+
+    async function speakNeural(text, langKey) {
+        const r = await fetch(TTS_BASE + '/tts?lang=' + langKey + '&text=' + encodeURIComponent(text));
+        if (!r.ok) throw new Error('tts ' + r.status);
+        const blob = await r.blob();
+        if (!blob.size) throw new Error('tts empty');
+        const url = URL.createObjectURL(blob);
+        try { await playSrc(url); } finally { URL.revokeObjectURL(url); }
+    }
+
+    function splitText(text, max = 180) {
+        const parts = text.match(/[^。！？.!?؟\n]+[。！？.!?؟]?/g) || [text];
+        const out = []; let cur = '';
+        for (const p of parts) {
+            if ((cur + p).length > max && cur) { out.push(cur); cur = p; } else cur += p;
+        }
+        if (cur) out.push(cur);
+        return out.flatMap(s => s.length > max ? s.match(new RegExp('.{1,' + max + '}', 'g')) : [s]);
+    }
+
+    async function speakGoogle(text, langKey) {
+        for (const chunk of splitText(text)) {
+            const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='
+                + LANGS[langKey].api + '&q=' + encodeURIComponent(chunk);
+            await playSrc(url);
+        }
+    }
+
+    function speakDevice(text, langKey) {
+        return new Promise(resolve => {
+            if (!('speechSynthesis' in window)) return resolve();
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = LANGS[langKey].tts;
+            const vs = speechSynthesis.getVoices().filter(v => v.lang.toLowerCase().startsWith(u.lang.split('-')[0]));
+            const v = vs.find(v => /natural|online|neural/i.test(v.name)) || vs[0];
+            if (v) u.voice = v;
+            u.onend = u.onerror = () => resolve();
+            speechSynthesis.speak(u);
+        });
+    }
+
+    async function speak(text, langKey) {
+        try { return await speakNeural(text, langKey); } catch (e) { console.warn('neural TTS failed:', e); }
+        try { return await speakGoogle(text, langKey); } catch (e) { console.warn('google TTS failed:', e); }
+        return speakDevice(text, langKey);
+    }
+
+    /* ---------- التعرف على الكلام ---------- */
+    function startListening(langKey) {
+        if (busy || rec) return;
+        if (!SR) { setStatus('المتصفح لا يدعم التعرف على الصوت. استخدم Chrome أو Edge أو Safari.', 'err'); return; }
+
+        unlockAudio();
+        try { player.pause(); } catch (_) {}
+        'speechSynthesis' in window && speechSynthesis.cancel();
+
+        session++;
+        const mySession = session;
+        finalText = ''; interimText = ''; activeLang = langKey;
+
+        showOriginal('', langKey, false);
+        showTranslation('', OTHER[langKey]);
+        els.btn[langKey].classList.add('active');
+        setStatus(langKey === 'ar' ? 'أستمع إليك… ارفع إصبعك عند الانتهاء' : '正在听… 说完请松手', 'rec');
+
+        const r = new SR();
+        r.lang = LANGS[langKey].stt;
+        r.continuous = true;
+        r.interimResults = true;
+        r.maxAlternatives = 1;
+
+        r.onresult = ev => {
+            if (mySession !== session) return;
+            let fin = '', tmp = '';
+            for (let i = 0; i < ev.results.length; i++) {
+                const res = ev.results[i];
+                if (res.isFinal) fin += res[0].transcript; else tmp += res[0].transcript;
+            }
+            finalText = fin; interimText = tmp;
+            showOriginal((fin + tmp).trim(), langKey, !!tmp);
+        };
+        r.onerror = ev => {
+            if (mySession !== session) return;
+            if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') setStatus('اسمح للمتصفح باستخدام الميكروفون ثم أعد المحاولة', 'err');
+            else if (ev.error === 'no-speech') setStatus('لم أسمع شيئاً، حاول مرة أخرى', 'err');
+            else if (ev.error !== 'aborted') setStatus('خطأ في الميكروفون: ' + ev.error, 'err');
+        };
+        r.onend = () => {
+            if (rec === r) rec = null;
+            if (mySession !== session) return;
+            finishSession(langKey, mySession);
+        };
+
+        rec = r;
+        try { r.start(); } catch (_) { rec = null; }
+    }
+
+    function stopListening() {
+        if (!activeLang) return;
+        els.btn[activeLang].classList.remove('active');
+        if (rec) { setStatus('…', 'work'); try { rec.stop(); } catch (_) {} }
+    }
+
+    async function finishSession(langKey, mySession) {
+        els.btn[langKey].classList.remove('active');
+        const text = (finalText + ' ' + interimText).trim();
+        activeLang = null;
+
+        if (!text) { if (!els.status.classList.contains('err')) setStatus(''); return; }
+
+        busy = true; setDisabled(true);
+        const target = OTHER[langKey];
+        setStatus(langKey === 'ar' ? 'جارٍ الترجمة…' : '翻译中…', 'work');
+
+        try {
+            const out = await translate(text, langKey, target);
+            if (mySession !== session) return;
+            showOriginal(text, langKey, false);
+            showTranslation(out, target);
+            setStatus(target === 'ar' ? 'جارٍ النطق بالعربية…' : '正在朗读…', 'work');
+            await speak(out, target);
+            setStatus('');
+        } catch (e) {
+            setStatus('تعذّرت الترجمة. تحقق من الاتصال بالإنترنت.', 'err');
+        } finally {
+            busy = false; setDisabled(false);
+        }
+    }
+
+    /* ---------- الضغط المطوّل ---------- */
+    function bind(langKey) {
+        const el = els.btn[langKey];
+        let pressed = false;
+        el.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            if (pressed) return;
+            pressed = true;
+            try { el.setPointerCapture(e.pointerId); } catch (_) {}
+            startListening(langKey);
+        });
+        const release = () => { if (!pressed) return; pressed = false; stopListening(); };
+        el.addEventListener('pointerup', release);
+        el.addEventListener('pointercancel', release);
+        el.addEventListener('lostpointercapture', release);
+        el.addEventListener('contextmenu', e => e.preventDefault());
+    }
+    bind('zh'); bind('ar');
+
+    if (!SR) setStatus('المتصفح لا يدعم التعرف على الصوت. استخدم Chrome أو Edge أو Safari.', 'err');
+})();
+</script>
+</body>
+</html>
