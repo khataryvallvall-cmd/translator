@@ -47,15 +47,12 @@
     .main-content {
         flex: 1; min-height: 0;
         display: flex; flex-direction: column;
-        padding: 18px 24px 4px;
-        gap: 12px;
-        position: relative;
+        padding: 22px 24px 4px;
+        gap: 10px;
         overflow: hidden;
     }
 
-    .block { display: flex; flex-direction: column; min-height: 0; }
-    .block.original { flex: 0 0 auto; max-height: 32%; }
-    .block.translation { flex: 1 1 auto; }
+    .block { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
 
     .label {
         font-size: 15px; font-weight: 800; color: var(--ink-soft);
@@ -64,32 +61,37 @@
 
     .text {
         font-weight: 900; line-height: 1.35;
+        font-size: clamp(34px, 9.5vw, 76px);
+        color: var(--ink);
         overflow-y: auto; overflow-wrap: anywhere; scrollbar-width: none;
+        flex: 1 1 auto; min-height: 0;
     }
     .text::-webkit-scrollbar { display: none; }
-
-    .original .text { font-size: clamp(24px, 6vw, 40px); color: var(--ink-soft); }
-    .translation .text { font-size: clamp(36px, 9.5vw, 76px); color: var(--ink); }
     .text.interim { opacity: .6; }
 
     .placeholder {
         font-size: clamp(22px, 5vw, 30px); font-weight: 700; color: #9aa1b2;
     }
 
-    /* تدوير النص للشخص المقابل */
-    .main-content.flipped .translation { transform: rotate(180deg); }
-    .flip-btn {
-        position: absolute; top: 12px; left: 16px;
-        width: 40px; height: 40px; border-radius: 12px;
-        background: #fff; border: 2px solid var(--ink);
+    /* أزرار: نسخ / إعادة الاستماع / تحميل الصوت */
+    .actions {
+        display: flex; flex-wrap: wrap; gap: 10px;
+        padding: 6px 0 8px;
+    }
+    .actions[hidden] { display: none; }
+    .act {
+        font-family: inherit;
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 9px 14px;
+        font-size: 15px; font-weight: 800; color: var(--ink);
+        background: #fff;
+        border: 2px solid var(--ink); border-radius: 12px;
         box-shadow: 2px 2px 0 var(--ink);
-        display: grid; place-items: center; cursor: pointer; z-index: 2;
+        cursor: pointer;
         transition: transform .12s, box-shadow .12s;
     }
-    .flip-btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--ink); }
-    .flip-btn svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-    .main-content.flipped .flip-btn { background: var(--ink); }
-    .main-content.flipped .flip-btn svg { stroke: #fff; }
+    .act:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+    .act svg { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
     .status {
         text-align: center; font-size: 16px; font-weight: 800;
@@ -178,24 +180,91 @@
 
     @media (prefers-reduced-motion: reduce) { .wave i { animation: none; height: 16px; } }
     @media (max-width: 380px) { .dock { padding-left: 22px; padding-right: 22px; } }
+
+    /* ================= تجاوب كامل مع جميع الأجهزة ================= */
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body {
+        height: 100vh; height: 100dvh;
+        width: 100%; max-width: 100vw;
+        overflow: hidden;
+    }
+    .main-content {
+        width: 100%; max-width: 980px; margin: 0 auto;
+        padding-top: 20px;
+        padding-right: max(22px, env(safe-area-inset-right));
+        padding-left: max(22px, env(safe-area-inset-left));
+    }
+    .text { font-size: clamp(26px, min(9vw, 8vh), 84px); }
+    .placeholder { font-size: clamp(18px, min(5vw, 4vh), 30px); }
+    .status {
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-left: max(12px, env(safe-area-inset-left));
+    }
+    .dock {
+        width: 100%; max-width: 980px; margin: 0 auto;
+        padding-top: 10px;
+        padding-right: max(26px, env(safe-area-inset-right));
+        padding-left: max(26px, env(safe-area-inset-left));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    .flag {
+        width: min(36vw, 190px, 27vh);
+        width: min(36vw, 190px, 27dvh);
+    }
+    .under { min-width: 0; }
+    .hint { font-size: clamp(13px, 3.9vw, 16px); }
+
+    /* الهواتف الصغيرة جداً */
+    @media (max-width: 340px) {
+        .act { padding: 8px 10px; font-size: 13px; }
+        .dock { padding-left: 16px; padding-right: 16px; }
+    }
+
+    /* الوضع الأفقي وقِصَر الشاشة */
+    @media (max-height: 520px) {
+        .main-content { padding-top: 8px; gap: 4px; }
+        .label { margin-bottom: 0; min-height: 16px; font-size: 13px; }
+        .text { font-size: clamp(22px, min(7vw, 12vh), 56px); }
+        .status { min-height: 20px; font-size: 14px; padding-top: 0; padding-bottom: 0; }
+        .dock { padding-top: 4px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+        .flag { width: min(24vw, 130px, 30vh); width: min(24vw, 130px, 30dvh); }
+        .under { height: 22px; }
+        .hint { font-size: 14px; }
+        .wave i { width: 5px; }
+        .actions { padding: 2px 0 4px; gap: 8px; }
+        .act { padding: 6px 10px; font-size: 13px; }
+    }
+
+    /* الشاشات الكبيرة (آيباد / حاسوب) */
+    @media (min-width: 900px) and (min-height: 700px) {
+        .flag { width: 210px; }
+        .text { font-size: clamp(48px, 6vw, 96px); }
+    }
 </style>
 </head>
 <body>
 
     <div class="main-content" id="main">
-        <div class="flip-btn" id="flip" role="button" aria-label="قلب النص للشخص المقابل">
-            <svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+        <div class="block">
+            <div class="label" id="main-label"></div>
+            <div class="text" id="main-text">
+                <span class="placeholder">اضغط مطولاً على العلم وتكلم، ثم ارفع إصبعك</span>
+            </div>
         </div>
 
-        <div class="block original">
-            <div class="label" id="original-label"></div>
-            <div class="text" id="original-text"></div>
-        </div>
-        <div class="block translation">
-            <div class="label" id="translation-label"></div>
-            <div class="text" id="translation-text">
-                <span class="placeholder">اضغط مطولاً على الميكروفون وتكلم، ثم ارفع إصبعك</span>
-            </div>
+        <div class="actions" id="actions" hidden>
+            <button class="act" id="act-copy" type="button">
+                <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+                <span>نسخ · 复制</span>
+            </button>
+            <button class="act" id="act-replay" type="button">
+                <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+                <span>استماع · 重听</span>
+            </button>
+            <button class="act" id="act-download" type="button">
+                <svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+                <span>تحميل · 下载</span>
+            </button>
         </div>
     </div>
 
@@ -240,9 +309,9 @@
 
     const $ = id => document.getElementById(id);
     const els = {
-        main: $('main'), status: $('status'),
-        origText: $('original-text'), origLabel: $('original-label'),
-        transText: $('translation-text'), transLabel: $('translation-label'),
+        status: $('status'),
+        mainText: $('main-text'), mainLabel: $('main-label'),
+        actions: $('actions'),
         btn: { zh: $('btn-zh'), ar: $('btn-ar') }
     };
 
@@ -251,21 +320,30 @@
     /* ---------- عرض ---------- */
     function setStatus(msg, cls = '') { els.status.textContent = msg; els.status.className = 'status ' + cls; }
 
+    let lastResult = null;
+
+    /* أثناء الكلام: يظهر ما يقوله المتحدث بلغته */
     function showOriginal(text, lang, interim) {
-        els.origText.textContent = text;
-        els.origText.dir = LANGS[lang].dir;
-        els.origText.className = 'text' + (interim ? ' interim' : '');
-        els.origLabel.textContent = text ? LANGS[lang].name : '';
-        els.origText.scrollTop = els.origText.scrollHeight;
+        lastResult = null;
+        els.actions.hidden = true;
+        els.mainText.textContent = text;
+        els.mainText.dir = LANGS[lang].dir;
+        els.mainText.className = 'text' + (interim ? ' interim' : '');
+        els.mainLabel.textContent = text ? LANGS[lang].name : '';
+        els.mainText.scrollTop = els.mainText.scrollHeight;
     }
+    /* بعد انتهاء الكلام: تظهر الترجمة باللغة الأخرى */
     function showTranslation(text, lang) {
-        els.transText.textContent = text;
-        els.transText.dir = LANGS[lang].dir;
-        els.transLabel.textContent = text ? LANGS[lang].name : '';
+        els.mainText.textContent = text;
+        els.mainText.dir = LANGS[lang].dir;
+        els.mainText.className = 'text';
+        els.mainText.scrollTop = 0;
+        els.mainLabel.textContent = text ? LANGS[lang].name : '';
+        lastResult = text ? { text, lang } : null;
+        els.actions.hidden = !text;
     }
     function setDisabled(on) { Object.values(els.btn).forEach(b => b.classList.toggle('disabled', on)); }
 
-    $('flip').addEventListener('click', () => els.main.classList.toggle('flipped'));
 
     /* ---------- الترجمة ---------- */
     async function translateGoogle(text, from, to) {
@@ -314,13 +392,26 @@
         });
     }
 
-    async function speakNeural(text, langKey) {
+    const audioCache = new Map();   // "lang|text" ← ملف الصوت
+    async function fetchNeural(text, langKey) {
+        const key = langKey + '|' + text;
+        if (audioCache.has(key)) return audioCache.get(key);
         const r = await fetch(TTS_BASE + '/tts?lang=' + langKey + '&text=' + encodeURIComponent(text));
         if (!r.ok) throw new Error('tts ' + r.status);
         const blob = await r.blob();
         if (!blob.size) throw new Error('tts empty');
+        audioCache.set(key, blob);
+        if (audioCache.size > 20) audioCache.delete(audioCache.keys().next().value);
+        return blob;
+    }
+
+    async function playBlob(blob) {
         const url = URL.createObjectURL(blob);
         try { await playSrc(url); } finally { URL.revokeObjectURL(url); }
+    }
+
+    async function speakNeural(text, langKey) {
+        await playBlob(await fetchNeural(text, langKey));
     }
 
     function splitText(text, max = 180) {
@@ -429,7 +520,6 @@
             }
             const fin = joinDedupe(finals), tmp = joinDedupe(interims);
             finalText = fin; interimText = tmp;
-            showOriginal(joinText(acc, fin, tmp), langKey, !!tmp);
         };
 
         r.onerror = ev => {
@@ -498,7 +588,6 @@
         try {
             const out = await translate(text, langKey, target);
             if (mySession !== session) return;
-            showOriginal(text, langKey, false);
             showTranslation(out, target);
             setStatus(target === 'ar' ? 'جارٍ النطق بالعربية…' : '正在朗读…', 'work');
             await speak(out, target);
@@ -509,6 +598,63 @@
             busy = false; setDisabled(false);
         }
     }
+
+    /* ---------- أزرار النسخ / الاستماع / التحميل ---------- */
+    function flash(id, msg) {
+        const span = $(id).querySelector('span');
+        const old = span.textContent;
+        span.textContent = msg;
+        setTimeout(() => { span.textContent = old; }, 1500);
+    }
+
+    $('act-copy').addEventListener('click', async () => {
+        if (!lastResult) return;
+        const text = lastResult.text;
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (_) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0;user-select:text;-webkit-user-select:text';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch (__) {}
+            ta.remove();
+        }
+        flash('act-copy', 'تم النسخ ✓ · 已复制');
+    });
+
+    $('act-replay').addEventListener('click', async () => {
+        if (!lastResult || busy) return;
+        const { text, lang } = lastResult;
+        busy = true; setDisabled(true);
+        try {
+            try { player.pause(); } catch (_) {}
+            'speechSynthesis' in window && speechSynthesis.cancel();
+            await speak(text, lang);
+        } finally {
+            busy = false; setDisabled(false);
+        }
+    });
+
+    $('act-download').addEventListener('click', async () => {
+        if (!lastResult) return;
+        const { text, lang } = lastResult;
+        try {
+            const blob = await fetchNeural(text, lang);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'translation-' + lang + '-' + Date.now() + '.mp3';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            flash('act-download', 'تم التحميل ✓ · 已下载');
+        } catch (_) {
+            flash('act-download', 'غير متاح ✕ · 不可用');
+        }
+    });
 
     /* ---------- الضغط المطوّل ---------- */
     function bind(langKey) {
