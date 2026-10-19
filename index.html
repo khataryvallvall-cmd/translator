@@ -354,6 +354,28 @@
         return speakDevice(text, langKey);
     }
 
+    /* ---------- إصلاح تكرار الكلمات في أندرويد ---------- */
+    function collapseWhole(t) {
+        // إن كان النص كله مكرراً بالتساوي: "مرحبا مرحبا مرحبا" ← "مرحبا"
+        const m = t.match(/^(.+?)(?:\s+\1)+$/);
+        return m ? m[1] : t;
+    }
+    function joinDedupe(parts) {
+        const out = [];
+        for (let p of parts) {
+            p = collapseWhole(p.trim());
+            if (!p) continue;
+            const last = out[out.length - 1];
+            if (last !== undefined) {
+                if (p === last) continue;                       // نفس المقطع مكرر
+                if (p.startsWith(last)) { out[out.length - 1] = p; continue; }  // مقطع تراكمي
+                if (last.startsWith(p)) continue;               // مقطع أقصر مكرر
+            }
+            out.push(p);
+        }
+        return collapseWhole(out.join(' ').trim());
+    }
+
     /* ---------- التعرف على الكلام ---------- */
     function startListening(langKey) {
         if (busy || rec) return;
@@ -380,11 +402,12 @@
 
         r.onresult = ev => {
             if (mySession !== session) return;
-            let fin = '', tmp = '';
+            const finals = [], interims = [];
             for (let i = 0; i < ev.results.length; i++) {
                 const res = ev.results[i];
-                if (res.isFinal) fin += res[0].transcript; else tmp += res[0].transcript;
+                (res.isFinal ? finals : interims).push(res[0].transcript);
             }
+            const fin = joinDedupe(finals), tmp = joinDedupe(interims);
             finalText = fin; interimText = tmp;
             showOriginal((fin + tmp).trim(), langKey, !!tmp);
         };
