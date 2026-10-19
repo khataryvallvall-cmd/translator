@@ -510,7 +510,7 @@
         showOriginal('', langKey, false);
         showTranslation('', OTHER[langKey]);
         els.btn[langKey].classList.add('active');
-        setStatus(langKey === 'ar' ? 'أستمع إليك… اضغط مرة أخرى عند الانتهاء' : '正在听… 说完请再点一下', 'rec');
+        setStatus('');
 
         beginSegment(langKey, mySession);
     }
