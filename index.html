@@ -99,80 +99,85 @@
     .status.work { color: #1b6ef3; }
     .status.err { color: var(--cn); }
 
-    /* ================= اللوحة السفلية الاحترافية ================= */
+    /* ================= الشريط السفلي: العلمان + زر الضغط المطوّل ================= */
     .dock {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        padding: 10px 16px;
-        padding-bottom: max(18px, env(safe-area-inset-bottom));
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 14px 36px;
+        padding-bottom: max(26px, env(safe-area-inset-bottom));
         direction: rtl;
     }
 
     .talk {
         --c: var(--mr);
-        --g: var(--mr-gold);
-        position: relative;
-        height: clamp(150px, 24dvh, 210px);
-        border-radius: 30px;
-        background: #fff;
-        border: 2.5px solid var(--ink);
-        box-shadow: 0 6px 0 var(--ink);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 6px;
-        cursor: pointer; touch-action: none; overflow: hidden;
-        transition: transform .12s cubic-bezier(.3,.7,.4,1), box-shadow .12s, background .18s, color .18s;
+        display: flex; flex-direction: column; align-items: center;
+        gap: 12px;
+        cursor: pointer; touch-action: none;
+        transition: opacity .15s;
     }
-    .talk.cn { --c: var(--cn); --g: var(--cn-gold); }
+    .talk.cn { --c: var(--cn); }
 
-    /* شريط لوني علوي بلون العلم */
-    .talk::before {
-        content: ""; position: absolute; inset: 0 0 auto 0; height: 8px;
-        background: linear-gradient(90deg, var(--c) 0 70%, var(--g) 70% 100%);
-        transition: opacity .18s;
-    }
-
+    /* العلم (نفس التصميم الأصلي) */
     .flag {
-        width: 62px; height: 62px; border-radius: 50%;
-        border: 2.5px solid var(--ink);
-        overflow: hidden; background: #eee; flex: none;
+        width: clamp(128px, 36vw, 170px);
+        aspect-ratio: 3 / 2;
+        border-radius: 6px;
+        overflow: hidden;
+        background: transparent;
+        position: relative;
+        transition: transform .15s cubic-bezier(.4,0,.2,1), box-shadow .15s;
     }
-    .flag img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+    .flag img {
+        width: 100%; height: 100%;
+        object-fit: cover; display: block;
+        pointer-events: none;
+    }
 
-    .lang-name { font-size: 28px; font-weight: 900; line-height: 1; color: var(--ink); transition: color .18s; }
-    .hint { font-size: 14px; font-weight: 700; color: var(--ink-soft); transition: color .18s; display: flex; align-items: center; gap: 6px; }
-    .hint svg { width: 16px; height: 16px; fill: currentColor; }
+    /* السطر السفلي: النص + الميكروفون الصغير، ويحل محله شريط الصوت عند الضغط */
+    .under {
+        position: relative;
+        height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        min-width: 130px;
+    }
+    .hint {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 16px; font-weight: 800; color: var(--ink-soft);
+        white-space: nowrap;
+    }
+    .hint svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
 
-    /* موجات الصوت */
     .wave {
-        position: absolute; bottom: 12px; display: none;
-        align-items: flex-end; gap: 5px; height: 22px;
+        position: absolute; inset: 0;
+        display: none; align-items: center; justify-content: center; gap: 5px;
     }
     .wave i {
-        width: 5px; border-radius: 3px; background: #fff; height: 6px;
+        width: 6px; height: 8px; border-radius: 3px; background: var(--c);
         animation: bar .9s ease-in-out infinite;
     }
-    .wave i:nth-child(2) { animation-delay: .12s; }
-    .wave i:nth-child(3) { animation-delay: .24s; }
-    .wave i:nth-child(4) { animation-delay: .36s; }
-    .wave i:nth-child(5) { animation-delay: .48s; }
-    @keyframes bar { 0%,100% { height: 5px; } 50% { height: 22px; } }
+    .wave i:nth-child(1) { animation-delay: .00s; }
+    .wave i:nth-child(2) { animation-delay: .15s; }
+    .wave i:nth-child(3) { animation-delay: .30s; }
+    .wave i:nth-child(4) { animation-delay: .10s; }
+    .wave i:nth-child(5) { animation-delay: .25s; }
+    .wave i:nth-child(6) { animation-delay: .05s; }
+    .wave i:nth-child(7) { animation-delay: .20s; }
+    @keyframes bar { 0%, 100% { height: 6px; } 50% { height: 26px; } }
 
-    .talk.active {
-        background: var(--c);
-        transform: translateY(6px);
-        box-shadow: 0 0 0 var(--ink);
+    /* حالة الضغط */
+    .talk.active .flag {
+        transform: scale(0.92);
+        box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--c);
     }
-    .talk.active::before { opacity: 0; }
-    .talk.active .lang-name, .talk.active .hint { color: #fff; }
-    .talk.active .hint { display: none; }
+    .talk.active .hint { visibility: hidden; }
     .talk.active .wave { display: flex; }
-    .talk.active .flag { border-color: #fff; }
 
-    .talk.disabled { opacity: .5; pointer-events: none; }
+    .talk.disabled { opacity: .45; pointer-events: none; }
 
-    @media (prefers-reduced-motion: reduce) { .wave i { animation: none; height: 14px; } }
-    @media (max-width: 380px) { .lang-name { font-size: 24px; } .flag { width: 52px; height: 52px; } }
+    @media (prefers-reduced-motion: reduce) { .wave i { animation: none; height: 16px; } }
+    @media (max-width: 380px) { .dock { padding-left: 22px; padding-right: 22px; } }
 </style>
 </head>
 <body>
@@ -201,18 +206,20 @@
 
         <!-- الصيني -->
         <div class="talk cn" id="btn-zh" role="button" aria-label="中文 按住说话">
-            <div class="flag"><img src="https://flagcdn.com/w320/cn.png" alt="علم الصين"></div>
-            <div class="lang-name">中文</div>
-            <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>按住说话</div>
-            <div class="wave"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="flag"><img src="https://flagcdn.com/w640/cn.png" alt="علم الصين"></div>
+            <div class="under">
+                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>按住说话</div>
+                <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
         </div>
 
         <!-- العربي -->
         <div class="talk ar" id="btn-ar" role="button" aria-label="العربية اضغط مطولاً للتحدث">
-            <div class="flag"><img src="https://flagcdn.com/w320/mr.png" alt="علم موريتانيا"></div>
-            <div class="lang-name">العربية</div>
-            <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>اضغط مطولاً</div>
-            <div class="wave"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="flag"><img src="https://flagcdn.com/w640/mr.png" alt="علم موريتانيا"></div>
+            <div class="under">
+                <div class="hint"><svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.91V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.09A6 6 0 0 0 18 11z"/></svg>اضغط مطولاً</div>
+                <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
         </div>
 
     </footer>
@@ -377,8 +384,12 @@
     }
 
     /* ---------- التعرف على الكلام ---------- */
+    let holding = false, acc = '', segStart = 0, fastFails = 0, finished = false;
+
+    function joinText(...parts) { return parts.map(p => (p || '').trim()).filter(Boolean).join(' '); }
+
     function startListening(langKey) {
-        if (busy || rec) return;
+        if (busy || rec || holding) return;
         if (!SR) { setStatus('المتصفح لا يدعم التعرف على الصوت. استخدم Chrome أو Edge أو Safari.', 'err'); return; }
 
         unlockAudio();
@@ -387,18 +398,27 @@
 
         session++;
         const mySession = session;
-        finalText = ''; interimText = ''; activeLang = langKey;
+        acc = ''; finalText = ''; interimText = '';
+        activeLang = langKey; holding = true; finished = false; fastFails = 0;
 
         showOriginal('', langKey, false);
         showTranslation('', OTHER[langKey]);
         els.btn[langKey].classList.add('active');
         setStatus(langKey === 'ar' ? 'أستمع إليك… ارفع إصبعك عند الانتهاء' : '正在听… 说完请松手', 'rec');
 
+        beginSegment(langKey, mySession);
+    }
+
+    /* مقطع تعرف واحد؛ إن انتهى تلقائياً (توقف قصير عن الكلام) والإصبع ما زال مضغوطاً نبدأ مقطعاً جديداً */
+    function beginSegment(langKey, mySession) {
         const r = new SR();
         r.lang = LANGS[langKey].stt;
         r.continuous = true;
         r.interimResults = true;
         r.maxAlternatives = 1;
+
+        finalText = ''; interimText = '';
+        segStart = Date.now();
 
         r.onresult = ev => {
             if (mySession !== session) return;
@@ -409,17 +429,39 @@
             }
             const fin = joinDedupe(finals), tmp = joinDedupe(interims);
             finalText = fin; interimText = tmp;
-            showOriginal((fin + tmp).trim(), langKey, !!tmp);
+            showOriginal(joinText(acc, fin, tmp), langKey, !!tmp);
         };
+
         r.onerror = ev => {
             if (mySession !== session) return;
-            if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') setStatus('اسمح للمتصفح باستخدام الميكروفون ثم أعد المحاولة', 'err');
-            else if (ev.error === 'no-speech') setStatus('لم أسمع شيئاً، حاول مرة أخرى', 'err');
-            else if (ev.error !== 'aborted') setStatus('خطأ في الميكروفون: ' + ev.error, 'err');
+            if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+                holding = false;
+                setStatus('اسمح للمتصفح باستخدام الميكروفون ثم أعد المحاولة', 'err');
+            } else if (ev.error === 'network') {
+                holding = false;
+                setStatus('تعذّر التعرف على الصوت. تحقق من الاتصال بالإنترنت.', 'err');
+            }
+            // no-speech و aborted: نتجاهلها، وسيعاد التشغيل في onend ما دام الإصبع مضغوطاً
         };
+
         r.onend = () => {
             if (rec === r) rec = null;
             if (mySession !== session) return;
+
+            const seg = joinText(finalText, interimText);
+            if (seg) acc = joinText(acc, seg);
+            finalText = ''; interimText = '';
+
+            if (holding) {
+                if (!seg && Date.now() - segStart < 500) fastFails++; else fastFails = 0;
+                if (fastFails < 4) {
+                    setTimeout(() => {
+                        if (holding && mySession === session && !rec) beginSegment(langKey, mySession);
+                    }, 60);
+                    return;
+                }
+                holding = false;   // فشل متكرر: ننهي الجلسة
+            }
             finishSession(langKey, mySession);
         };
 
@@ -429,13 +471,22 @@
 
     function stopListening() {
         if (!activeLang) return;
-        els.btn[activeLang].classList.remove('active');
-        if (rec) { setStatus('…', 'work'); try { rec.stop(); } catch (_) {} }
+        const langKey = activeLang;
+        holding = false;
+        els.btn[langKey].classList.remove('active');
+        if (rec) {
+            setStatus('…', 'work');
+            try { rec.stop(); } catch (_) {}
+        } else {
+            finishSession(langKey, session);   // الإصبع رُفع بين مقطعين
+        }
     }
 
     async function finishSession(langKey, mySession) {
+        if (finished) return;
+        finished = true;
         els.btn[langKey].classList.remove('active');
-        const text = (finalText + ' ' + interimText).trim();
+        const text = acc.trim();
         activeLang = null;
 
         if (!text) { if (!els.status.classList.contains('err')) setStatus(''); return; }
