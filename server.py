@@ -34,6 +34,18 @@ async def synth(text: str, voice: str) -> bytes:
     return bytes(buf)
 
 
+@app.after_request
+def add_cors(resp):
+    # للسماح للصفحة المستضافة في مكان آخر (GitHub Pages) بطلب الصوت
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+
+@app.get("/health")
+def health():
+    return "ok"
+
+
 @app.get("/")
 def index():
     return send_from_directory(HERE, "index.html")

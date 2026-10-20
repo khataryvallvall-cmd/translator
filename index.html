@@ -309,7 +309,11 @@
     if (window.visualViewport) window.visualViewport.addEventListener('resize', setVh);
 
     /* ✏️ إن شغّلت الخادم في مكان آخر ضع عنوانه هنا، مثال: 'https://my-app.onrender.com' */
-    const TTS_BASE = '';
+    const RENDER_URL = 'https://translator-smxh.onrender.com';
+    const TTS_BASE = (location.hostname.endsWith('onrender.com') || location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '' : RENDER_URL;
+
+    /* إيقاظ الخادم في الخلفية بمجرد فتح التطبيق، دون أن يرى المستخدم أي شيء */
+    try { fetch(TTS_BASE + '/health', { mode: 'no-cors', cache: 'no-store' }).catch(() => {}); } catch (_) {}
 
     const LANGS = {
         ar: { stt: 'ar-SA', tts: 'ar-SA', api: 'ar',    name: 'العربية', dir: 'rtl' },
@@ -404,7 +408,11 @@
     async function fetchNeural(text, langKey) {
         const key = langKey + '|' + text;
         if (audioCache.has(key)) return audioCache.get(key);
-        const r = await fetch(TTS_BASE + '/tts?lang=' + langKey + '&text=' + encodeURIComponent(text));
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15000);   // إن كان الخادم نائماً ننتقل لصوت احتياطي
+        let r;
+        try { r = await fetch(TTS_BASE + '/tts?lang=' + langKey + '&text=' + encodeURIComponent(text), { signal: ctrl.signal }); }
+        finally { clearTimeout(timer); }
         if (!r.ok) throw new Error('tts ' + r.status);
         const blob = await r.blob();
         if (!blob.size) throw new Error('tts empty');
