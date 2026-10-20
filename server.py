@@ -14,16 +14,19 @@ app = Flask(__name__, static_folder=None)
 
 # ✏️ غيّر الأصوات من هنا
 VOICES = {
-    "zh": "zh-CN-XiaoxiaoNeural",   # صيني فصيح طبيعي (أنثى). بدائل: zh-CN-YunxiNeural (ذكر), zh-CN-YunjianNeural
+    "zh": "zh-CN-YunyangNeural",    # صيني فصيح بصوت رجل واضح. بدائل رجالية: zh-CN-YunjianNeural (قوي), zh-CN-YunxiNeural (شاب)
     "ar": "ar-SA-HamedNeural",      # عربي فصيح (ذكر). بديل: ar-SA-ZariyahNeural (أنثى), ar-EG-SalmaNeural
 }
+
+# ✏️ مستوى الصوت: من -50% إلى +100% (الأعلى قد يشوّه الصوت قليلاً)
+VOLUME = "+50%"
 
 _cache = OrderedDict()
 CACHE_MAX = 60
 
 
 async def synth(text: str, voice: str) -> bytes:
-    comm = edge_tts.Communicate(text, voice)
+    comm = edge_tts.Communicate(text, voice, volume=VOLUME)
     buf = bytearray()
     async for chunk in comm.stream():
         if chunk["type"] == "audio":
