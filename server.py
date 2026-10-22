@@ -1,5 +1,6 @@
 """
 خادم صغير: يقدّم صفحة التطبيق + يولّد أصواتاً عصبية (Microsoft Neural) مجاناً.
+الصوت يُرسَل مباشرة أثناء توليده (Streaming) فيبدأ النطق بسرعة.
 التشغيل:  pip install -r requirements.txt  ثم  python server.py
 """
 import asyncio
@@ -25,13 +26,24 @@ _cache = OrderedDict()
 CACHE_MAX = 60
 
 
-async def synth(text: str, voice: str) -> bytes:
-    comm = edge_tts.Communicate(text, voice, volume=VOLUME)
-    buf = bytearray()
-    async for chunk in comm.stream():
-        if chunk["type"] == "audio":
-            buf.extend(chunk["data"])
-    return bytes(buf)
+def audio_stream(text: str, voice: str):
+    """يُنتج أجزاء الصوت واحداً تلو الآخر بمجرد وصولها من Microsoft."""
+    loop = asyncio.new_event_loop()
+    agen = edge_tts.Communicate(text, voice, volume=VOLUME).stream()
+    try:
+        while True:
+            try:
+                chunk = loop.run_until_complete(agen.__anext__())
+            except StopAsyncIteration:
+                break
+            if chunk["type"] == "audio":
+                yield chunk["data"]
+    finally:
+        try:
+            loop.run_until_complete(agen.aclose())
+        except Exception:  # noqa: BLE001
+            pass
+        loop.close()
 
 
 @app.after_request
@@ -57,22 +69,32 @@ def tts():
     lang = request.args.get("lang", "zh")
     if not text or lang not in VOICES:
         abort(400)
+
+    headers = {"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
     key = (lang, text)
+
     if key in _cache:
         _cache.move_to_end(key)
-        data = _cache[key]
-    else:
-        try:
-            data = asyncio.run(synth(text, VOICES[lang]))
-        except Exception as e:  # noqa: BLE001
-            print("TTS error:", e)
-            abort(502)
-        if not data:
-            abort(502)
-        _cache[key] = data
+        return Response(_cache[key], mimetype="audio/mpeg", headers=headers)
+
+    gen = audio_stream(text, VOICES[lang])
+    try:
+        first = next(gen)          # ننتظر أول جزء فقط؛ إن فشل نرجع خطأ ليعمل الصوت الاحتياطي
+    except Exception as e:  # noqa: BLE001
+        print("TTS error:", e)
+        abort(502)
+
+    def body():
+        parts = [first]
+        yield first
+        for chunk in gen:
+            parts.append(chunk)
+            yield chunk
+        _cache[key] = b"".join(parts)
         if len(_cache) > CACHE_MAX:
             _cache.popitem(last=False)
-    return Response(data, mimetype="audio/mpeg", headers={"Cache-Control": "no-store"})
+
+    return Response(body(), mimetype="audio/mpeg", headers=headers)
 
 
 if __name__ == "__main__":
