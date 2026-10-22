@@ -251,6 +251,24 @@
     }
     .talk { gap: 8px; }
     @media (max-height: 520px) { .lname { font-size: 15px; } .talk { gap: 4px; } }
+
+    /* ================= الخلفية: مزيج أبيض وأزرق في الصفحة كلها (شبكة ألوان ناعمة) ================= */
+    body {
+        background-color: #f3f8ff;
+        background-image:
+            radial-gradient(75% 48% at 0% 0%,    rgba(96, 165, 250, .62) 0%, rgba(96, 165, 250, 0) 72%),
+            radial-gradient(65% 42% at 100% 14%, rgba(191, 219, 254, .95) 0%, rgba(191, 219, 254, 0) 72%),
+            radial-gradient(80% 46% at 8% 52%,   rgba(255, 255, 255, .95) 0%, rgba(255, 255, 255, 0) 72%),
+            radial-gradient(70% 44% at 100% 62%, rgba(147, 197, 253, .60) 0%, rgba(147, 197, 253, 0) 72%),
+            radial-gradient(85% 52% at 100% 100%, rgba(59, 130, 246, .52) 0%, rgba(59, 130, 246, 0) 72%),
+            radial-gradient(75% 44% at 0% 100%,  rgba(125, 182, 252, .70) 0%, rgba(125, 182, 252, 0) 72%),
+            linear-gradient(180deg, rgba(232, 242, 255, .82) 0%, rgba(255, 255, 255, .80) 46%, rgba(214, 231, 254, .85) 100%),
+            linear-gradient(rgba(20, 33, 61, .08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(20, 33, 61, .08) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 26px 26px, 26px 26px;
+        background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, center, center;
+        background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat;
+    }
 </style>
 </head>
 <body>
@@ -387,6 +405,18 @@
         catch (_) { return await translateMyMemory(text, from, to); }
     }
 
+    const trCache = new Map();   // "from|to|text" ← وعد بالترجمة
+    function getTranslation(text, fromKey, toKey) {
+        const key = fromKey + '|' + toKey + '|' + text;
+        if (!trCache.has(key)) {
+            const p = translate(text, fromKey, toKey);
+            p.catch(() => trCache.delete(key));
+            trCache.set(key, p);
+            if (trCache.size > 30) trCache.delete(trCache.keys().next().value);
+        }
+        return trCache.get(key);
+    }
+
     /* ---------- الصوت: عصبي (خادمك) ← Google ← صوت الجهاز ---------- */
     const player = new Audio();
     player.preload = 'auto';
@@ -425,7 +455,39 @@
         });
     }
 
+    const ttsCache = new Map();   // "lang|text" ← وعد بملف الصوت (يُجهَّز مسبقاً أثناء كلام المستخدم)
+    function getTtsBlob(text, langKey) {
+        const key = langKey + '|' + text;
+        if (!ttsCache.has(key)) {
+            const p = (async () => {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 20000);
+                try {
+                    const r = await fetch(TTS_BASE + '/tts?lang=' + langKey + '&text=' + encodeURIComponent(text), { signal: ctrl.signal });
+                    if (!r.ok) throw new Error('tts ' + r.status);
+                    const blob = await r.blob();
+                    if (!blob.size) throw new Error('tts empty');
+                    return blob;
+                } finally { clearTimeout(timer); }
+            })();
+            p.catch(() => ttsCache.delete(key));
+            ttsCache.set(key, p);
+            if (ttsCache.size > 20) ttsCache.delete(ttsCache.keys().next().value);
+        }
+        return ttsCache.get(key);
+    }
+
+    async function playBlob(blob) {
+        const url = URL.createObjectURL(blob);
+        try { await playSrc(url); } finally { URL.revokeObjectURL(url); }
+    }
+
     async function speakNeural(text, langKey) {
+        const key = langKey + '|' + text;
+        if (ttsCache.has(key)) {                       // الصوت جاهز أو قيد التجهيز: نشغّله فوراً
+            try { await playBlob(await ttsCache.get(key)); return; }
+            catch (e) { ttsCache.delete(key); console.warn('cached TTS failed:', e); }
+        }
         await playStream(TTS_BASE + '/tts?lang=' + langKey + '&text=' + encodeURIComponent(text));
     }
 
@@ -494,6 +556,22 @@
 
     function joinText(...parts) { return parts.map(p => (p || '').trim()).filter(Boolean).join(' '); }
 
+    /* أثناء كلام المستخدم: نترجم ونجهّز الصوت في الخلفية (دون نطقه) ليخرج فوراً عند انتهائه */
+    let prefetchTimer = null, prefetchedText = '';
+    function schedulePrefetch(langKey, text) {
+        clearTimeout(prefetchTimer);
+        text = (text || '').trim();
+        if (text.length < 3 || text === prefetchedText) return;
+        prefetchTimer = setTimeout(async () => {
+            prefetchedText = text;
+            const target = OTHER[langKey];
+            try {
+                const out = await getTranslation(text, langKey, target);
+                if (out) getTtsBlob(out, target).catch(() => {});
+            } catch (_) {}
+        }, 700);
+    }
+
     function startListening(langKey) {
         if (busy || rec || holding) return;
         if (!SR) { setStatus('المتصفح لا يدعم التعرف على الصوت. استخدم Chrome أو Edge أو Safari.', 'err'); return; }
@@ -505,6 +583,7 @@
         session++;
         const mySession = session;
         acc = ''; finalText = ''; interimText = '';
+        clearTimeout(prefetchTimer); prefetchedText = '';
         activeLang = langKey; holding = true; finished = false; fastFails = 0;
 
         showOriginal('', langKey, false);
@@ -535,6 +614,7 @@
             }
             const fin = joinDedupe(finals), tmp = joinDedupe(interims);
             finalText = fin; interimText = tmp;
+            schedulePrefetch(langKey, joinText(acc, fin, tmp));
         };
 
         r.onerror = ev => {
@@ -589,6 +669,7 @@
     async function finishSession(langKey, mySession) {
         if (finished) return;
         finished = true;
+        clearTimeout(prefetchTimer);
         els.btn[langKey].classList.remove('active');
         const text = acc.trim();
         activeLang = null;
@@ -599,7 +680,7 @@
         const target = OTHER[langKey];
 
         try {
-            const out = await translate(text, langKey, target);
+            const out = await getTranslation(text, langKey, target);
             if (mySession !== session) return;
             showTranslation(out, target);
             await speak(out, target);
